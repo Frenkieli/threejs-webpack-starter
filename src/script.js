@@ -3,6 +3,10 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import * as dat from 'dat.gui'
 
+const loader = new THREE.TextureLoader();
+const height = loader.load('height.jpg');
+const texture = loader.load('texture.jpg');
+const alpha = loader.load('alpha.jpg');
 // Debug
 const gui = new dat.GUI()
 
@@ -13,37 +17,59 @@ const canvas = document.querySelector('canvas.webgl')
 const scene = new THREE.Scene()
 
 // Objects
-const geometry = new THREE.TorusGeometry( .7, .2, 16, 100 );
+const grometry = new THREE.PlaneBufferGeometry(3, 3, 64, 64);
 
 // Materials
+const material = new THREE.MeshStandardMaterial({
+    color: 'gary',
+    map: texture,
+    displacementMap: height,
+    displacementScale: 2,
+    alphaMap: alpha,
+    transparent: true,
+    depthTest: false
+})
 
-const material = new THREE.MeshBasicMaterial()
-material.color = new THREE.Color(0xff0000)
+const plane = new THREE.Mesh(grometry, material);
+scene.add(plane);
+
+plane.rotation.x = 181;
+gui.add(plane.rotation, 'x').min(0).max(10);
 
 // Mesh
-const sphere = new THREE.Mesh(geometry,material)
-scene.add(sphere)
+
 
 // Lights
 
-const pointLight = new THREE.PointLight(0xffffff, 0.1)
-pointLight.position.x = 2
-pointLight.position.y = 3
-pointLight.position.z = 4
+const pointLight = new THREE.PointLight(0x00b3ff, 4)
+pointLight.position.x = 0
+pointLight.position.y = 0
+pointLight.position.z = 10
 scene.add(pointLight)
+
+gui.add(pointLight.position, 'x');
+gui.add(pointLight.position, 'y');
+gui.add(pointLight.position, 'z');
+
+const col = { color: '#00ff00'};
+
+gui.addColor(col, 'color').onChange(()=>{
+    pointLight.color.set(col.color);
+})
+
 
 /**
  * Sizes
  */
 const sizes = {
-    width: window.innerWidth,
+    width: window.innerWidth * 0.7,
     height: window.innerHeight
 }
 
 window.addEventListener('resize', () =>
 {
     // Update sizes
-    sizes.width = window.innerWidth
+    sizes.width = window.innerWidth * 0.7
     sizes.height = window.innerHeight
 
     // Update camera
@@ -62,7 +88,7 @@ window.addEventListener('resize', () =>
 const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100)
 camera.position.x = 0
 camera.position.y = 0
-camera.position.z = 2
+camera.position.z = 3
 scene.add(camera)
 
 // Controls
@@ -73,7 +99,8 @@ scene.add(camera)
  * Renderer
  */
 const renderer = new THREE.WebGLRenderer({
-    canvas: canvas
+    canvas: canvas,
+    alpha: true
 })
 renderer.setSize(sizes.width, sizes.height)
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
@@ -81,6 +108,15 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 /**
  * Animate
  */
+
+document.addEventListener('mousemove', animateTerrain);
+
+
+let mouseY = 0;
+
+function animateTerrain(event) {
+    mouseY = event.clientY;
+}
 
 const clock = new THREE.Clock()
 
@@ -90,7 +126,10 @@ const tick = () =>
     const elapsedTime = clock.getElapsedTime()
 
     // Update objects
-    sphere.rotation.y = .5 * elapsedTime
+    // sphere.rotation.y = .5 * elapsedTime
+    plane.rotation.z = .5 * elapsedTime
+    plane.material.displacementScale = mouseY * 0.004;
+
 
     // Update Orbital Controls
     // controls.update()
